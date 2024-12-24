@@ -1,0 +1,11 @@
+{
+  "name": "Pomotime",
+  "version": "1.0.0",
+  "description": "A simple pomodoro timer for productivity",
+  "manifest_version": 3,
+  "permissions": ["alarms", "notifications", "contextMenus", "tabs"],
+  "action": {},
+  "background": {
+    "service_worker": "service_worker.js"
+  }
+}
