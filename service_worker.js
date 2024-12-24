@@ -92,7 +92,7 @@ const startTimer = (time, config) => {
     // Updating the icon badge
     remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
     chrome.action.setBadgeText({ text: `${remainingMinutes.toString()}` });
-  }, DEFAULT_ICON_UPDATE_INTERVAL);
+  }, 60 * 1000);
 
   //   Stopping the countdown
   setTimeout(() => {
