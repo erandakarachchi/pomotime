@@ -1,8 +1,8 @@
 // Should be in seconds.
-const SECONDS_IN_MINUTE = 1;
-const DEFAULT_WORK_TIME = 10 * SECONDS_IN_MINUTE;
+const SECONDS_IN_MINUTE = 60;
+const DEFAULT_WORK_TIME = 25 * SECONDS_IN_MINUTE;
 const DEFAULT_BREAK_TIME = 5 * SECONDS_IN_MINUTE;
-const DEFAULT_LARGE_BREAK_TIME = 7 * SECONDS_IN_MINUTE;
+const DEFAULT_LARGE_BREAK_TIME = 15 * SECONDS_IN_MINUTE;
 
 const DEFAULT_MAX_CYCLES = 4;
 
@@ -13,7 +13,6 @@ const DEFAULT_BREAK_ICON_BADGE_COLOR = "#5CB338";
 const DEFAULT_BREAK_ICON_BADGE_TEXT_COLOR = "#FFFFFF";
 
 const DEFAULT_ICON_UPDATE_INTERVAL = 1000 * SECONDS_IN_MINUTE;
-const DEFAULT_TIMER_END_INTERVAL = DEFAULT_WORK_TIME * 1000;
 
 // Context menu
 const OPEN_SETTINGS_CONTEXT_MENU_ID = "pomotime-settings";
@@ -102,7 +101,7 @@ const startTimer = (time, config) => {
     if (onComplete) {
       onComplete();
     }
-  }, DEFAULT_TIMER_END_INTERVAL);
+  }, time * 1000);
 };
 
 // Stop the timer
