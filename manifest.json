@@ -1,9 +1,9 @@
 {
   "name": "Pomotime",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A simple pomodoro timer for productivity",
   "manifest_version": 3,
-  "permissions": ["alarms", "notifications", "contextMenus", "tabs"],
+  "permissions": ["notifications", "contextMenus", "tabs", "storage"],
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
