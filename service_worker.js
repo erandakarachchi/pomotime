@@ -1,6 +1,6 @@
 // Should be in seconds.
 const SECONDS_IN_MINUTE = 60;
-const DEFAULT_WORK_TIME = 25 * SECONDS_IN_MINUTE;
+const DEFAULT_WORK_TIME = 1 * SECONDS_IN_MINUTE;
 const DEFAULT_BREAK_TIME = 5 * SECONDS_IN_MINUTE;
 const DEFAULT_LARGE_BREAK_TIME = 15 * SECONDS_IN_MINUTE;
 
@@ -35,10 +35,22 @@ const workConfig = {
   iconBadgeTextColor: DEFAULT_WORK_ICON_BADGE_TEXT_COLOR,
   onComplete: () => {
     if (currentSessions === DEFAULT_MAX_CYCLES) {
+      chrome.notifications.create({
+        type: "basic",
+        title: "Pomotime",
+        message: "Work session complete, Take a long break!",
+        iconUrl: "icons/icon16.png",
+      });
       chrome.tabs.create({ url: "long-break.html" });
       currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
     } else {
       chrome.tabs.create({ url: "complete.html" });
+      chrome.notifications.create({
+        type: "basic",
+        title: "Pomotime",
+        message: "Work session complete, Take a break!",
+        iconUrl: "icons/icon16.png",
+      });
       currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
     }
   },
@@ -48,6 +60,12 @@ const breakConfig = {
   iconBadgeColor: DEFAULT_BREAK_ICON_BADGE_COLOR,
   iconBadgeTextColor: DEFAULT_BREAK_ICON_BADGE_TEXT_COLOR,
   onComplete: () => {
+    chrome.notifications.create({
+      type: "basic",
+      title: "Pomotime",
+      message: "Break complete, Start working again!",
+      iconUrl: "icons/icon16.png",
+    });
     chrome.tabs.create({ url: "break.html" });
     currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
   },
@@ -77,7 +95,6 @@ const stopTimerContextMenuConfig = {
 // This function is responsible for starting the timer.
 let timerInterval;
 const startTimer = (time, config) => {
-  console.log("Starting timer with time:", time);
   const { iconBadgeColor, iconBadgeTextColor, onComplete } = config;
   let currentTime = time;
   let remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
