@@ -1,0 +1,33 @@
+{
+  "name": "extension",
+  "version": "1.0.0",
+  "description": "Yet another pomodoro timer extension",
+  "main": "service-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erandakarachchi/pomotime.git"
+  },
+  "keywords": [
+    "pomodoro",
+    "pomotime",
+    "pomodoro timer",
+    "pomodoro timer extension"
+  ],
+  "author": "Eranda Kudalugodaarachchi",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/erandakarachchi/pomotime/issues"
+  },
+  "homepage": "https://github.com/erandakarachchi/pomotime#readme",
+  "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  }
+}

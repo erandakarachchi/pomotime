@@ -95,6 +95,7 @@ const stopTimerContextMenuConfig = {
 // This function is responsible for starting the timer.
 let timerInterval;
 const startTimer = (time, config) => {
+  console.log("Starting timer with time:", time);
   const { iconBadgeColor, iconBadgeTextColor, onComplete } = config;
   let currentTime = time;
   let remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
