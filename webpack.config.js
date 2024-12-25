@@ -7,7 +7,7 @@ module.exports = {
     service_worker: "./src/core/service_worker.js",
     break: "./src/pages/break/break.js",
     complete: "./src/pages/complete/complete.js",
-    long_break: "./src/pages/long-break/long-break.js",
+    large_break: "./src/pages/large-break/large-break.js",
   },
   output: {
     filename: "[name].js",

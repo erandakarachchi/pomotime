@@ -28,11 +28,13 @@ const CONTEXT_MENU_ITEMS = {
 const DEFAULT_WORK_CONFIG = {
   badgeTextColor: "#F7FFF7",
   badgeBackgroundColor: "#FF6B6B",
+
   onComplete: () => {
     showNotification(
       "Work complete 🎉",
       "Take a break and get ready for the next cycle"
     );
+    openHtmlPage("complete.html");
   },
 };
 
@@ -41,6 +43,7 @@ const DEFAULT_BREAK_CONFIG = {
   badgeBackgroundColor: "#6BCB77",
   onComplete: () => {
     showNotification("Break complete", "Time to work again");
+    openHtmlPage("break.html");
   },
 };
 
@@ -49,6 +52,7 @@ const DEFAULT_LARGE_BREAK_CONFIG = {
   badgeBackgroundColor: "#6BCB77",
   onComplete: () => {
     showNotification("Large break complete", "Time to work again");
+    openHtmlPage("large-break.html");
   },
 };
 
@@ -87,6 +91,18 @@ chrome.storage.local.onChanged.addListener((changes) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "startBreak") {
+    startTimerHandler();
+  }
+  if (message.action === "startNewSession") {
+    startTimerHandler();
+  }
+  if (message.action === "startLargeBreak") {
+    startTimerHandler();
+  }
+});
+
 const startTimerHandler = () => {
   if (gIsTimerRunning) {
     showNotification(
@@ -118,6 +134,10 @@ const showNotification = (title, message) => {
     message: message,
     iconUrl: "icons/icon48.png",
   });
+};
+
+const openHtmlPage = (page) => {
+  chrome.tabs.create({ url: `${page}` });
 };
 
 const saveDefaultSettings = async () => {
