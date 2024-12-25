@@ -6,7 +6,6 @@ window.onload = () => {
         console.error(chrome.runtime.lastError);
         return;
       }
-      console.log("Response from service worker:", response);
     });
     chrome.tabs.getCurrent((tab) => {
       chrome.tabs.remove(tab.id);
