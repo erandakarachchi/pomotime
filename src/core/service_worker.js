@@ -1,6 +1,6 @@
 // Should be in seconds.
 const SECONDS_IN_MINUTE = 60;
-const DEFAULT_WORK_TIME = 1 * SECONDS_IN_MINUTE;
+const DEFAULT_WORK_TIME = 25 * SECONDS_IN_MINUTE;
 const DEFAULT_BREAK_TIME = 5 * SECONDS_IN_MINUTE;
 const DEFAULT_LARGE_BREAK_TIME = 15 * SECONDS_IN_MINUTE;
 
@@ -95,6 +95,7 @@ const stopTimerContextMenuConfig = {
 // This function is responsible for starting the timer.
 let timerInterval;
 const startTimer = (time, config) => {
+  console.log("Starting timer with time:", time);
   const { iconBadgeColor, iconBadgeTextColor, onComplete } = config;
   let currentTime = time;
   let remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
