@@ -1,0 +1,26 @@
+body {
+  --s: 30px; /* the size */
+  --c1: #fb4141;
+  --c2: #ffffff;
+
+  background-color: #fb4141;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+

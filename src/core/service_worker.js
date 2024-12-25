@@ -1,183 +1,209 @@
-// Should be in seconds.
-const SECONDS_IN_MINUTE = 60;
-const DEFAULT_WORK_TIME = 25 * SECONDS_IN_MINUTE;
-const DEFAULT_BREAK_TIME = 5 * SECONDS_IN_MINUTE;
-const DEFAULT_LARGE_BREAK_TIME = 15 * SECONDS_IN_MINUTE;
+const settings = require("./settings.json");
 
-const DEFAULT_MAX_CYCLES = 4;
+/**
+ * Global variables are defined here
+ * They should have a prefix of g to indicate that they are global
+ */
+let gTimerInterval;
+let gTimeout;
+/**
+ * Timer type to start next
+ * This can have the options of work, break, largeBreak
+ */
+let gTimerType = "work";
+let gIsTimerRunning = false;
+let gWorkCyclesCount = 0;
 
-const DEFAULT_WORK_ICON_BADGE_COLOR = "#FB4141";
-const DEFAULT_WORK_ICON_BADGE_TEXT_COLOR = "#FFFFFF";
+let workTime = settings.timerSettings.workTime;
+let breakTime = settings.timerSettings.breakTime;
+let largeBreakTime = settings.timerSettings.largeBreakTime;
+let maxCycles = settings.timerSettings.maxCycles;
 
-const DEFAULT_BREAK_ICON_BADGE_COLOR = "#5CB338";
-const DEFAULT_BREAK_ICON_BADGE_TEXT_COLOR = "#FFFFFF";
-
-const DEFAULT_ICON_UPDATE_INTERVAL = 1000 * SECONDS_IN_MINUTE;
-
-// Context menu
-const OPEN_SETTINGS_CONTEXT_MENU_ID = "pomotime-settings";
-const STOP_TIMER_CONTEXT_MENU_ID = "pomotime-stop";
-const START_NEW_SESSION_CONTEXT_MENU_ID = "pomotime-start-new-session";
-
-const CURRENT_TIMER_STATUS = {
-  WORK: "work",
-  BREAK: "break",
-  LARGE_BREAK: "large_break",
-  COMPLETE: "complete",
-  IDLE: "idle",
+const CONTEXT_MENU_ITEMS = {
+  ID_OPEN_SETTINGS: "openSettings",
+  ID_STOP_TIMER: "stopTimer",
+  ID_RESET_TIMER: "resetTimer",
 };
 
-let currentTimerStatus = CURRENT_TIMER_STATUS.IDLE;
-let currentSessions = 0;
-
-const workConfig = {
-  iconBadgeColor: DEFAULT_WORK_ICON_BADGE_COLOR,
-  iconBadgeTextColor: DEFAULT_WORK_ICON_BADGE_TEXT_COLOR,
+const DEFAULT_WORK_CONFIG = {
+  badgeTextColor: "#F7FFF7",
+  badgeBackgroundColor: "#FF6B6B",
   onComplete: () => {
-    if (currentSessions === DEFAULT_MAX_CYCLES) {
-      chrome.notifications.create({
-        type: "basic",
-        title: "Pomotime",
-        message: "Work session complete, Take a long break!",
-        iconUrl: "icons/icon16.png",
-      });
-      chrome.tabs.create({ url: "long-break.html" });
-      currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
-    } else {
-      chrome.tabs.create({ url: "complete.html" });
-      chrome.notifications.create({
-        type: "basic",
-        title: "Pomotime",
-        message: "Work session complete, Take a break!",
-        iconUrl: "icons/icon16.png",
-      });
-      currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
-    }
+    showNotification(
+      "Work complete 🎉",
+      "Take a break and get ready for the next cycle"
+    );
   },
 };
 
-const breakConfig = {
-  iconBadgeColor: DEFAULT_BREAK_ICON_BADGE_COLOR,
-  iconBadgeTextColor: DEFAULT_BREAK_ICON_BADGE_TEXT_COLOR,
+const DEFAULT_BREAK_CONFIG = {
+  badgeTextColor: "#F7FFF7",
+  badgeBackgroundColor: "#6BCB77",
   onComplete: () => {
-    chrome.notifications.create({
-      type: "basic",
-      title: "Pomotime",
-      message: "Break complete, Start working again!",
-      iconUrl: "icons/icon16.png",
-    });
-    chrome.tabs.create({ url: "break.html" });
-    currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
+    showNotification("Break complete", "Time to work again");
   },
 };
 
-const largeBreakConfig = {
-  iconBadgeColor: DEFAULT_BREAK_ICON_BADGE_COLOR,
-  iconBadgeTextColor: DEFAULT_BREAK_ICON_BADGE_TEXT_COLOR,
+const DEFAULT_LARGE_BREAK_CONFIG = {
+  badgeTextColor: "#F7FFF7",
+  badgeBackgroundColor: "#6BCB77",
   onComplete: () => {
-    chrome.tabs.create({ url: "break.html" });
-    currentTimerStatus = CURRENT_TIMER_STATUS.COMPLETE;
+    showNotification("Large break complete", "Time to work again");
   },
 };
 
-const openSettingsContextMenuConfig = {
-  id: OPEN_SETTINGS_CONTEXT_MENU_ID,
-  title: "Open Settings",
-  contexts: ["action"],
+chrome.runtime.onInstalled.addListener(async () => {
+  await saveDefaultSettings();
+  createContextMenu();
+  updateSettings();
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  startTimerHandler();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  updateSettings();
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  const menuItemId = info.menuItemId;
+  switch (menuItemId) {
+    case CONTEXT_MENU_ITEMS.ID_OPEN_SETTINGS:
+      chrome.tabs.create({ url: "settings.html" });
+      break;
+    case CONTEXT_MENU_ITEMS.ID_STOP_TIMER:
+      stopTimer();
+      break;
+    case CONTEXT_MENU_ITEMS.ID_RESET_TIMER:
+      resetAllGlobals();
+      break;
+  }
+});
+
+chrome.storage.local.onChanged.addListener((changes) => {
+  if (changes.settings) {
+    updateSettings();
+  }
+});
+
+const startTimerHandler = () => {
+  if (gIsTimerRunning) {
+    showNotification(
+      "Timer is already running",
+      "Stop the timer to start a new one"
+    );
+    return;
+  }
+  if (gTimerType === "work") {
+    startTimer(workTime, DEFAULT_WORK_CONFIG);
+  } else if (gTimerType === "break") {
+    startTimer(breakTime, DEFAULT_BREAK_CONFIG);
+  } else if (gTimerType === "largeBreak") {
+    startTimer(largeBreakTime, DEFAULT_LARGE_BREAK_CONFIG);
+  }
 };
 
-const stopTimerContextMenuConfig = {
-  id: STOP_TIMER_CONTEXT_MENU_ID,
-  title: "Stop Timer",
-  contexts: ["action"],
+const setIconBadge = (time, textColor, backgroundColor) => {
+  const remainingMinutes = time === -1 ? "" : time.toString();
+  chrome.action.setBadgeText({ text: remainingMinutes });
+  chrome.action.setBadgeTextColor({ color: textColor });
+  chrome.action.setBadgeBackgroundColor({ color: backgroundColor });
 };
 
-// This function is responsible for starting the timer.
-let timerInterval;
+const showNotification = (title, message) => {
+  chrome.notifications.create({
+    type: "basic",
+    title: title,
+    message: message,
+    iconUrl: "icons/icon48.png",
+  });
+};
+
+const saveDefaultSettings = async () => {
+  await chrome.storage.local.set({ settings: settings });
+};
+
+const createContextMenu = () => {
+  chrome.contextMenus.create({
+    id: CONTEXT_MENU_ITEMS.ID_OPEN_SETTINGS,
+    title: "Open Settings",
+    contexts: ["action"],
+  });
+  chrome.contextMenus.create({
+    id: CONTEXT_MENU_ITEMS.ID_STOP_TIMER,
+    title: "Stop Timer",
+    contexts: ["action"],
+  });
+  chrome.contextMenus.create({
+    id: CONTEXT_MENU_ITEMS.ID_RESET_TIMER,
+    title: "Reset Timers",
+    contexts: ["action"],
+  });
+};
+
+const updateTimerState = (currentTimerType, workCyclesCount, maxWorkCycles) => {
+  let nextTimerType = "";
+  if (currentTimerType === "work") {
+    gWorkCyclesCount++;
+    // If the work cycles count is greater than or equal to the max work cycles,
+    // then set the next timer type to large break
+    //  Adding a -1 because the work cycles count is 0 based
+    nextTimerType =
+      workCyclesCount >= maxWorkCycles - 1 ? "largeBreak" : "break";
+  } else if (currentTimerType === "break") {
+    nextTimerType = "work";
+  } else if (currentTimerType === "largeBreak") {
+    gWorkCyclesCount = 0;
+    nextTimerType = "work";
+  }
+  return nextTimerType;
+};
+
+const resetAllGlobals = () => {
+  gIsTimerRunning = false;
+  gWorkCyclesCount = 0;
+  gTimerType = "work";
+};
+
+const updateSettings = async () => {
+  const data = await chrome.storage.local.get("settings");
+  const settings = data.settings;
+  if (settings.timerSettings) {
+    workTime = settings.timerSettings.workTime || workTime;
+    breakTime = settings.timerSettings.breakTime || breakTime;
+    largeBreakTime = settings.timerSettings.largeBreakTime || largeBreakTime;
+    maxCycles = settings.timerSettings.maxCycles || maxCycles;
+  }
+};
 const startTimer = (time, config) => {
-  console.log("Starting timer with time:", time);
-  const { iconBadgeColor, iconBadgeTextColor, onComplete } = config;
-  let currentTime = time;
-  let remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
-  //   Setting the icon badge
-  chrome.action.setBadgeText({ text: remainingMinutes.toString() });
-  chrome.action.setBadgeBackgroundColor({ color: iconBadgeColor });
-  chrome.action.setBadgeTextColor({ color: iconBadgeTextColor });
+  const { onComplete, badgeTextColor, badgeBackgroundColor } = config;
+  gIsTimerRunning = true;
+  setIconBadge(time, badgeTextColor, badgeBackgroundColor);
 
-  //   Starting the countdown
-  timerInterval = setInterval(() => {
-    currentTime = currentTime - SECONDS_IN_MINUTE;
-    // Updating the icon badge
-    remainingMinutes = Math.floor(currentTime / SECONDS_IN_MINUTE);
-    chrome.action.setBadgeText({ text: `${remainingMinutes.toString()}` });
+  gTimerInterval = setInterval(() => {
+    time = time - 1;
+    setIconBadge(time, badgeTextColor, badgeBackgroundColor);
   }, 60 * 1000);
 
-  //   Stopping the countdown
-  setTimeout(() => {
-    clearInterval(timerInterval);
-    chrome.action.setBadgeText({ text: "" });
+  gTimeout = setTimeout(() => {
+    gIsTimerRunning = false;
+    clearInterval(gTimerInterval);
+    setIconBadge(0, badgeTextColor, badgeBackgroundColor);
+    gTimerType = updateTimerState(gTimerType, gWorkCyclesCount, maxCycles);
     if (onComplete) {
       onComplete();
     }
-  }, time * 1000);
+  }, time * 60 * 1000);
 };
 
-// Stop the timer
 const stopTimer = () => {
-  clearInterval(timerInterval);
-  chrome.action.setBadgeText({ text: "" });
-  currentTimerStatus = CURRENT_TIMER_STATUS.IDLE;
+  if (!gIsTimerRunning) {
+    showNotification("Timer is not running", "Start the timer to stop it");
+    return;
+  }
+  clearInterval(gTimerInterval);
+  clearTimeout(gTimeout);
+  gIsTimerRunning = false;
+  setIconBadge(0, "#000000", "#FFFFFF");
 };
-
-/*** Chrome Events ***/
-
-//   Called when the extension is installed
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create(openSettingsContextMenuConfig);
-  chrome.contextMenus.create(stopTimerContextMenuConfig);
-});
-
-//   Called when the context menu is clicked
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === OPEN_SETTINGS_CONTEXT_MENU_ID) {
-    chrome.tabs.create({ url: "settings.html" });
-  } else if (info.menuItemId === STOP_TIMER_CONTEXT_MENU_ID) {
-    stopTimer();
-  }
-});
-
-//   Called when the extension icon is clicked
-chrome.action.onClicked.addListener((tab) => {
-  if (currentTimerStatus === CURRENT_TIMER_STATUS.IDLE) {
-    startTimer(DEFAULT_WORK_TIME, workConfig);
-    currentTimerStatus = CURRENT_TIMER_STATUS.WORK;
-    currentSessions++;
-  }
-});
-
-//   Called when the extension receives a message
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const allowedStatuses = [
-    CURRENT_TIMER_STATUS.WORK,
-    CURRENT_TIMER_STATUS.IDLE,
-    CURRENT_TIMER_STATUS.COMPLETE,
-  ];
-  if (
-    message.action === "startBreak" &&
-    allowedStatuses.includes(currentTimerStatus)
-  ) {
-    startTimer(DEFAULT_BREAK_TIME, breakConfig);
-    currentTimerStatus = CURRENT_TIMER_STATUS.BREAK;
-    return true;
-  } else if (message.action === "startNewSession") {
-    startTimer(DEFAULT_WORK_TIME, workConfig);
-    currentSessions++;
-    currentTimerStatus = CURRENT_TIMER_STATUS.WORK;
-    return true;
-  } else if (message.action === "startLongBreak") {
-    startTimer(DEFAULT_LARGE_BREAK_TIME, largeBreakConfig);
-    currentTimerStatus = CURRENT_TIMER_STATUS.LARGE_BREAK;
-    return true;
-  }
-  return true;
-});

@@ -1,0 +1,13 @@
+{
+  "timerSettings": {
+    "workTime": 25,
+    "breakTime": 5,
+    "largeBreakTime": 15,
+    "maxCycles": 4
+  },
+  "notificationSettings": {
+    "enabled": true,
+    "sound": true,
+    "vibrate": true
+  }
+}

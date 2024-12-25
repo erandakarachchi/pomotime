@@ -1,17 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomotime Settings</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./settings.css" />
+    <script src="./settings.js" defer></script>
+    <title>Settings</title>
+  </head>
+  <body class="container">
     <h1>Pomotime Settings</h1>
-    <label for="workTime">Work Time (in minutes):</label>
-    <input type="number" id="workTime" name="workTime" min="1" max="120" value="25">
-    <label for="breakTime">Break Time (in minutes):</label>
-    <input type="number" id="breakTime" name="breakTime" min="1" max="120" value="5">
-    <button id="save">Save</button>
 
-</body>
+    <form id="settings-form" class="settings-form">
+      <div class="form-group">
+        <label for="workTime">Work Time (in minutes):</label>
+        <input
+          required
+          type="number"
+          id="workTime"
+          name="workTime"
+          min="1"
+          max="120"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="breakTime">Break Time (in minutes):</label>
+        <input
+          type="number"
+          id="breakTime"
+          name="breakTime"
+          min="1"
+          max="120"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="largeBreakTime">Large Break Time (in minutes):</label>
+        <input
+          type="number"
+          id="largeBreakTime"
+          name="largeBreakTime"
+          min="1"
+          max="120"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="maxCycles">Pomodoro cycles before a large break</label>
+        <input
+          type="number"
+          id="maxCycles"
+          name="maxCycles"
+          min="1"
+          max="10"
+          required
+        />
+      </div>
+      <button id="save">Save</button>
+    </form>
+  </body>
 </html>
