@@ -3,7 +3,7 @@
   "version": "1.0.2",
   "description": "A simple pomodoro timer for productivity",
   "manifest_version": 3,
-  "permissions": ["notifications", "contextMenus", "tabs", "storage"],
+  "permissions": ["notifications", "contextMenus", "storage"],
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
