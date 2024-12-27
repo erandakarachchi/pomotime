@@ -1,8 +1,8 @@
 {
   "timerSettings": {
-    "workTime": 0.05,
-    "breakTime": 0.05,
-    "largeBreakTime": 0.05,
+    "workTime": 25,
+    "breakTime": 5,
+    "largeBreakTime": 15,
     "maxCycles": 4
   },
   "notificationSettings": {
