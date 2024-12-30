@@ -6,7 +6,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   chrome.storage.local.get("settings", (result) => {
     const settings = result.settings;
-    console.log("settings", settings);
     workTimeInput.value = settings.timerSettings.workTime;
     breakTimeInput.value = settings.timerSettings.breakTime;
     largeBreakTimeInput.value = settings.timerSettings.largeBreakTime;
@@ -17,15 +16,25 @@ window.addEventListener("DOMContentLoaded", () => {
   settingsForm.addEventListener("submit", (e) => {
     e.preventDefault();
     console.log("form submitted");
-    chrome.storage.local.set({
-      settings: {
-        timerSettings: {
-          workTime: workTimeInput.value,
-          breakTime: breakTimeInput.value,
-          largeBreakTime: largeBreakTimeInput.value,
-          maxCycles: maxCyclesInput.value,
+    chrome.storage.local.set(
+      {
+        settings: {
+          timerSettings: {
+            workTime: workTimeInput.value,
+            breakTime: breakTimeInput.value,
+            largeBreakTime: largeBreakTimeInput.value,
+            maxCycles: maxCyclesInput.value,
+          },
         },
       },
-    });
+      () => {
+        chrome.notifications.create({
+          type: "basic",
+          title: "Settings Saved",
+          message: "Your timer settings have been updated successfully!",
+          iconUrl: "/icons/icon48.png",
+        });
+      }
+    );
   });
 });

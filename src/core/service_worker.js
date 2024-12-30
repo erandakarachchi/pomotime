@@ -4,8 +4,6 @@ const settings = require("./settings.json");
  * Global variables are defined here
  * They should have a prefix of g to indicate that they are global
  */
-let gTimerInterval;
-let gTimeout;
 /**
  * Timer type to start next
  * This can have the options of work, break, largeBreak
@@ -25,10 +23,13 @@ const CONTEXT_MENU_ITEMS = {
   ID_RESET_TIMER: "resetTimer",
 };
 
+const WORK_ALARM_NAME = "defaultWorkAlarm";
+const CURRENT_TIMER_CONFIG = "currentTimerConfig";
+const CURRENT_TIMER_DURATION = "currentTimerDuration";
+
 const DEFAULT_WORK_CONFIG = {
   badgeTextColor: "#F7FFF7",
   badgeBackgroundColor: "#FF6B6B",
-
   onComplete: () => {
     showNotification(
       "Work complete 🎉",
@@ -56,14 +57,50 @@ const DEFAULT_LARGE_BREAK_CONFIG = {
   },
 };
 
+const TIMER_CONFIG_IDS = {
+  work: "work",
+  break: "break",
+  largeBreak: "largeBreak",
+};
+
+const TIMER_CONFIGS = {
+  [TIMER_CONFIG_IDS.work]: DEFAULT_WORK_CONFIG,
+  [TIMER_CONFIG_IDS.break]: DEFAULT_BREAK_CONFIG,
+  [TIMER_CONFIG_IDS.largeBreak]: DEFAULT_LARGE_BREAK_CONFIG,
+};
+
 chrome.runtime.onInstalled.addListener(async () => {
   await saveDefaultSettings();
   createContextMenu();
   updateSettings();
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  startTimerHandler();
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === WORK_ALARM_NAME) {
+    let timerDurationMinutes = await getLocalStorage(CURRENT_TIMER_DURATION);
+    const currentTimerConfigId = await getLocalStorage(CURRENT_TIMER_CONFIG);
+    const { badgeTextColor, badgeBackgroundColor, onComplete } =
+      TIMER_CONFIGS[currentTimerConfigId];
+    timerDurationMinutes = timerDurationMinutes - 1;
+    if (timerDurationMinutes === 0) {
+      chrome.alarms.clear(WORK_ALARM_NAME);
+      gIsTimerRunning = false;
+      gTimerType = updateTimerState(gTimerType, gWorkCyclesCount, maxCycles);
+      console.log("Timer type updated ", gTimerType);
+      setIconBadge(-1, badgeTextColor, badgeBackgroundColor);
+      if (onComplete && typeof onComplete === "function") {
+        onComplete();
+      }
+      return;
+    } else {
+      setIconBadge(timerDurationMinutes, badgeTextColor, badgeBackgroundColor);
+      setLocalStorage(CURRENT_TIMER_DURATION, timerDurationMinutes);
+    }
+  }
+});
+
+chrome.action.onClicked.addListener(async (tab) => {
+  await startTimerHandler();
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -91,19 +128,19 @@ chrome.storage.local.onChanged.addListener((changes) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === "startBreak") {
-    startTimerHandler();
+    await startTimerHandler();
   }
   if (message.action === "startNewSession") {
-    startTimerHandler();
+    await startTimerHandler();
   }
   if (message.action === "startLargeBreak") {
-    startTimerHandler();
+    await startTimerHandler();
   }
 });
 
-const startTimerHandler = () => {
+const startTimerHandler = async () => {
   if (gIsTimerRunning) {
     showNotification(
       "Timer is already running",
@@ -112,11 +149,11 @@ const startTimerHandler = () => {
     return;
   }
   if (gTimerType === "work") {
-    startTimer(workTime, DEFAULT_WORK_CONFIG);
+    await startTimer(workTime, TIMER_CONFIG_IDS.work);
   } else if (gTimerType === "break") {
-    startTimer(breakTime, DEFAULT_BREAK_CONFIG);
+    await startTimer(breakTime, TIMER_CONFIG_IDS.break);
   } else if (gTimerType === "largeBreak") {
-    startTimer(largeBreakTime, DEFAULT_LARGE_BREAK_CONFIG);
+    await startTimer(largeBreakTime, TIMER_CONFIG_IDS.largeBreak);
   }
 };
 
@@ -133,6 +170,18 @@ const showNotification = (title, message) => {
     title: title,
     message: message,
     iconUrl: "icons/icon48.png",
+  });
+};
+
+const setLocalStorage = (key, value) => {
+  chrome.storage.local.set({ [key]: value });
+};
+
+const getLocalStorage = (key) => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(key, (result) => {
+      resolve(result[key]);
+    });
   });
 };
 
@@ -184,6 +233,7 @@ const resetAllGlobals = () => {
   gIsTimerRunning = false;
   gWorkCyclesCount = 0;
   gTimerType = "work";
+  setIconBadge(-1, "#000000", "#FFFFFF");
 };
 
 const updateSettings = async () => {
@@ -196,25 +246,17 @@ const updateSettings = async () => {
     maxCycles = settings.timerSettings.maxCycles || maxCycles;
   }
 };
-const startTimer = (time, config) => {
-  const { onComplete, badgeTextColor, badgeBackgroundColor } = config;
+
+const startTimer = async (time, configId) => {
+  const { badgeTextColor, badgeBackgroundColor } = TIMER_CONFIGS[configId];
   gIsTimerRunning = true;
   setIconBadge(time, badgeTextColor, badgeBackgroundColor);
-
-  gTimerInterval = setInterval(() => {
-    time = time - 1;
-    setIconBadge(time, badgeTextColor, badgeBackgroundColor);
-  }, 60 * 1000);
-
-  gTimeout = setTimeout(() => {
-    gIsTimerRunning = false;
-    clearInterval(gTimerInterval);
-    setIconBadge(0, badgeTextColor, badgeBackgroundColor);
-    gTimerType = updateTimerState(gTimerType, gWorkCyclesCount, maxCycles);
-    if (onComplete) {
-      onComplete();
-    }
-  }, time * 60 * 1000);
+  setLocalStorage(CURRENT_TIMER_CONFIG, configId);
+  setLocalStorage(CURRENT_TIMER_DURATION, time);
+  // Alarm implementation
+  await chrome.alarms.create(WORK_ALARM_NAME, {
+    periodInMinutes: 1,
+  });
 };
 
 const stopTimer = () => {
@@ -222,8 +264,7 @@ const stopTimer = () => {
     showNotification("Timer is not running", "Start the timer to stop it");
     return;
   }
-  clearInterval(gTimerInterval);
-  clearTimeout(gTimeout);
+  chrome.alarms.clear(WORK_ALARM_NAME);
   gIsTimerRunning = false;
-  setIconBadge(0, "#000000", "#FFFFFF");
+  setIconBadge(-1, "#000000", "#FFFFFF");
 };
