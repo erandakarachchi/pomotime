@@ -1,6 +1,6 @@
 {
   "name": "Pomotime",
-  "version": "1.0.4",
+  "version": "1.2.0",
   "description": "A simple pomodoro timer for productivity",
   "manifest_version": 3,
   "permissions": ["notifications", "contextMenus", "storage", "alarms"],

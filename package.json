@@ -1,6 +1,6 @@
 {
   "name": "extension",
-  "version": "1.0.4",
+  "version": "1.2.0",
   "description": "Yet another pomodoro timer extension",
   "main": "service-worker.js",
   "scripts": {

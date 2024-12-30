@@ -86,6 +86,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       chrome.alarms.clear(WORK_ALARM_NAME);
       gIsTimerRunning = false;
       gTimerType = updateTimerState(gTimerType, gWorkCyclesCount, maxCycles);
+      console.log("Timer type updated ", gTimerType);
       setIconBadge(-1, badgeTextColor, badgeBackgroundColor);
       if (onComplete && typeof onComplete === "function") {
         onComplete();
@@ -232,6 +233,7 @@ const resetAllGlobals = () => {
   gIsTimerRunning = false;
   gWorkCyclesCount = 0;
   gTimerType = "work";
+  setIconBadge(-1, "#000000", "#FFFFFF");
 };
 
 const updateSettings = async () => {
@@ -264,5 +266,5 @@ const stopTimer = () => {
   }
   chrome.alarms.clear(WORK_ALARM_NAME);
   gIsTimerRunning = false;
-  setIconBadge(0, "#000000", "#FFFFFF");
+  setIconBadge(-1, "#000000", "#FFFFFF");
 };
