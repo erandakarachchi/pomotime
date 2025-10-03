@@ -5,8 +5,8 @@
 }
 
 .container {
-  --s: 30px; /* the size */
-  --c1: #fb4141;
+  --s: 30px;
+  --c1: #FF6B6B;
   --c2: #ffffff;
 
   background: conic-gradient(at 60% 60%, var(--c1) 75%, #0000 0) 0 0 /
@@ -19,50 +19,94 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  font-family: Arial, sans-serif;
 }
 
 .settings-container {
-  width: 800px;
-  background-color: #f7fff7;
-  padding: 20px;
-  border-radius: 4px;
+  width: 600px;
+  max-width: 90vw;
+  background-color: #fff8f8;
+  padding: 3rem 2.5rem;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2rem;
+  box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
+  text-align: center;
+}
+
+.settings-container h1 {
+  font-size: 2.5rem;
+  color: #C62828;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  font-weight: bold;
 }
 
 .settings-form {
   height: 100%;
   width: 100%;
-  background-color: #f7fff7;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  text-align: left;
 }
 
 .form-group label {
-  font-size: 14px;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: #D32F2F;
+  margin-bottom: 4px;
 }
 
 .form-group input {
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #FFCDD2;
+  background-color: #ffffff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  background-color: #fefefe;
+}
+
+.form-group input:hover {
+  border-color: #FF8A80;
 }
 
 .settings-form button {
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background-color: #fb4141;
-  color: #fff;
-  font-weight: 600;
+  padding: 15px 30px;
+  border-radius: 25px;
+  border: none;
+  background: linear-gradient(45deg, #FF6B6B, #FF8A80);
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  margin-top: 1rem;
+}
+
+.settings-form button:hover {
+  background: linear-gradient(45deg, #f44336, #ef5350);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+}
+
+.settings-form button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
