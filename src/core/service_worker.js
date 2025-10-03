@@ -241,28 +241,21 @@ const handleTimerComplete = async (completedTimerType) => {
     timerState.workCyclesCompleted++;
     timerState.sessionCount++;
     
-    console.log(`Work session #${timerState.workCyclesCompleted} completed. Max cycles: ${timerSettings.maxCycles}`);
-    
     // Determine next phase: regular break or large break
     if (timerState.workCyclesCompleted >= timerSettings.maxCycles) {
       timerState.currentPhase = "largeBreak";
-      console.log("Triggering LARGE BREAK after", timerState.workCyclesCompleted, "work sessions");
       // Don't reset cycle count here - reset after large break completes
     } else {
       timerState.currentPhase = "break";
-      console.log("Triggering regular break. Need", (timerSettings.maxCycles - timerState.workCyclesCompleted), "more work sessions for large break");
     }
   } else if (completedTimerType === "break") {
     timerState.currentPhase = "work";
-    console.log("Break completed. Back to work");
   } else if (completedTimerType === "largeBreak") {
     timerState.currentPhase = "work";
     timerState.workCyclesCompleted = 0; // Reset cycle count after large break completes
-    console.log("Large break completed. Cycle count reset. Back to work");
   }
   
   await saveTimerState(timerState);
-  console.log("Timer state saved. Next phase:", timerState.currentPhase, "Cycles completed:", timerState.workCyclesCompleted);
 };
 
 const setIconBadge = (time, textColor, backgroundColor) => {

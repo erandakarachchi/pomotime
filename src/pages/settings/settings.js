@@ -15,7 +15,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const settingsForm = document.querySelector(".settings-form");
   settingsForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    console.log("form submitted");
     
     // Get existing settings first to preserve notification settings
     chrome.storage.local.get("settings", (result) => {
