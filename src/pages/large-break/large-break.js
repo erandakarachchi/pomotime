@@ -1,7 +1,7 @@
 window.onload = () => {
     const button = document.getElementById("startLongBreak");
     button.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ action: "startLongBreak" }, (response) => {
+      chrome.runtime.sendMessage({ action: "startWorkTimer" }, (response) => {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError);
           return;

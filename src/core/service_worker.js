@@ -1,21 +1,37 @@
 const settings = require("./settings.json");
 
 /**
- * Global variables are defined here
- * They should have a prefix of g to indicate that they are global
+ * Timer state management
  */
-/**
- * Timer type to start next
- * This can have the options of work, break, largeBreak
- */
-let gTimerType = "work";
-let gIsTimerRunning = false;
-let gWorkCyclesCount = 0;
+const TIMER_STATE_KEY = "timerState";
+const DEFAULT_TIMER_STATE = {
+  currentPhase: "work",
+  workCyclesCompleted: 0,
+  isRunning: false,
+  sessionCount: 0
+};
 
-let workTime = settings.timerSettings.workTime;
-let breakTime = settings.timerSettings.breakTime;
-let largeBreakTime = settings.timerSettings.largeBreakTime;
-let maxCycles = settings.timerSettings.maxCycles;
+/**
+ * Timer settings - centralized for easy customization
+ */
+const getTimerSettings = async () => {
+  const data = await getLocalStorage("settings");
+  if (data && data.timerSettings) {
+    return {
+      workTime: parseInt(data.timerSettings.workTime) || settings.timerSettings.workTime,
+      breakTime: parseInt(data.timerSettings.breakTime) || settings.timerSettings.breakTime,
+      largeBreakTime: parseInt(data.timerSettings.largeBreakTime) || settings.timerSettings.largeBreakTime,
+      maxCycles: parseInt(data.timerSettings.maxCycles) || settings.timerSettings.maxCycles
+    };
+  }
+  // Fallback to default settings
+  return {
+    workTime: settings.timerSettings.workTime,
+    breakTime: settings.timerSettings.breakTime,
+    largeBreakTime: settings.timerSettings.largeBreakTime,
+    maxCycles: settings.timerSettings.maxCycles
+  };
+};
 
 const CONTEXT_MENU_ITEMS = {
   ID_OPEN_SETTINGS: "openSettings",
@@ -71,6 +87,7 @@ const TIMER_CONFIGS = {
 
 chrome.runtime.onInstalled.addListener(async () => {
   await saveDefaultSettings();
+  await initializeTimerState();
   createContextMenu();
   updateSettings();
 });
@@ -84,9 +101,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     timerDurationMinutes = timerDurationMinutes - 1;
     if (timerDurationMinutes === 0) {
       chrome.alarms.clear(WORK_ALARM_NAME);
-      gIsTimerRunning = false;
-      gTimerType = updateTimerState(gTimerType, gWorkCyclesCount, maxCycles);
-      console.log("Timer type updated ", gTimerType);
+      await handleTimerComplete(currentTimerConfigId);
       setIconBadge(-1, badgeTextColor, badgeBackgroundColor);
       if (onComplete && typeof onComplete === "function") {
         onComplete();
@@ -100,10 +115,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
-  await startTimerHandler();
+  const timerState = await getTimerState();
+  if (timerState.currentPhase === "work") {
+    await startWorkTimer();
+  } else if (timerState.currentPhase === "break") {
+    await startBreakTimer();
+  } else if (timerState.currentPhase === "largeBreak") {
+    await startLargeBreakTimer();
+  }
 });
 
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
+  await initializeTimerState();
   updateSettings();
 });
 
@@ -117,7 +140,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       stopTimer();
       break;
     case CONTEXT_MENU_ITEMS.ID_RESET_TIMER:
-      resetAllGlobals();
+      resetTimerState();
       break;
   }
 });
@@ -129,32 +152,117 @@ chrome.storage.local.onChanged.addListener((changes) => {
 });
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.action === "startBreak") {
-    await startTimerHandler();
+  if (message.action === "startWorkTimer") {
+    await startWorkTimer();
   }
-  if (message.action === "startNewSession") {
-    await startTimerHandler();
+  if (message.action === "startBreakTimer") {
+    await startBreakTimer();
   }
-  if (message.action === "startLargeBreak") {
-    await startTimerHandler();
+  if (message.action === "startLargeBreakTimer") {
+    await startLargeBreakTimer();
   }
 });
 
-const startTimerHandler = async () => {
-  if (gIsTimerRunning) {
-    showNotification(
-      "Timer is already running",
-      "Stop the timer to start a new one"
-    );
+// Timer state management functions
+const getTimerState = async () => {
+  const result = await getLocalStorage(TIMER_STATE_KEY);
+  return result || DEFAULT_TIMER_STATE;
+};
+
+const saveTimerState = async (state) => {
+  await setLocalStorage(TIMER_STATE_KEY, state);
+};
+
+const initializeTimerState = async () => {
+  const state = await getTimerState();
+  // If no state exists, save the default state
+  if (!await getLocalStorage(TIMER_STATE_KEY)) {
+    await saveTimerState(DEFAULT_TIMER_STATE);
+  }
+};
+
+const resetTimerState = async () => {
+  await saveTimerState(DEFAULT_TIMER_STATE);
+  setIconBadge(-1, "#000000", "#FFFFFF");
+  showNotification("Timer Reset", "All timers have been reset");
+};
+
+// Explicit timer start functions
+const startWorkTimer = async () => {
+  const timerState = await getTimerState();
+  if (timerState.isRunning) {
+    showNotification("Timer is already running", "Stop the timer to start a new one");
     return;
   }
-  if (gTimerType === "work") {
-    await startTimer(workTime, TIMER_CONFIG_IDS.work);
-  } else if (gTimerType === "break") {
-    await startTimer(breakTime, TIMER_CONFIG_IDS.break);
-  } else if (gTimerType === "largeBreak") {
-    await startTimer(largeBreakTime, TIMER_CONFIG_IDS.largeBreak);
+  
+  const timerSettings = await getTimerSettings();
+  timerState.isRunning = true;
+  timerState.currentPhase = "work";
+  await saveTimerState(timerState);
+  await startTimer(timerSettings.workTime, TIMER_CONFIG_IDS.work);
+};
+
+const startBreakTimer = async () => {
+  const timerState = await getTimerState();
+  if (timerState.isRunning) {
+    showNotification("Timer is already running", "Stop the timer to start a new one");
+    return;
   }
+  
+  const timerSettings = await getTimerSettings();
+  timerState.isRunning = true;
+  timerState.currentPhase = "break";
+  await saveTimerState(timerState);
+  await startTimer(timerSettings.breakTime, TIMER_CONFIG_IDS.break);
+};
+
+const startLargeBreakTimer = async () => {
+  const timerState = await getTimerState();
+  if (timerState.isRunning) {
+    showNotification("Timer is already running", "Stop the timer to start a new one");
+    return;
+  }
+  
+  const timerSettings = await getTimerSettings();
+  timerState.isRunning = true;
+  timerState.currentPhase = "largeBreak";
+  await saveTimerState(timerState);
+  await startTimer(timerSettings.largeBreakTime, TIMER_CONFIG_IDS.largeBreak);
+};
+
+// Handle timer completion and state transitions
+const handleTimerComplete = async (completedTimerType) => {
+  const timerState = await getTimerState();
+  const timerSettings = await getTimerSettings();
+  
+  timerState.isRunning = false;
+  
+  if (completedTimerType === "work") {
+    timerState.workCyclesCompleted++;
+    timerState.sessionCount++;
+    
+    console.log(`Work session #${timerState.workCyclesCompleted} completed. Max cycles: ${timerSettings.maxCycles}`);
+    
+    // Determine next phase: regular break or large break
+    if (timerState.workCyclesCompleted >= timerSettings.maxCycles) {
+      timerState.currentPhase = "largeBreak";
+      console.log("Triggering LARGE BREAK after", timerState.workCyclesCompleted, "work sessions");
+      // Don't reset cycle count here - reset after large break completes
+    } else {
+      timerState.currentPhase = "break";
+      console.log("Triggering regular break. Need", (timerSettings.maxCycles - timerState.workCyclesCompleted), "more work sessions for large break");
+    }
+  } else if (completedTimerType === "break") {
+    timerState.currentPhase = "work";
+    console.log("Break completed. Back to work");
+  } else if (completedTimerType === "largeBreak") {
+    timerState.currentPhase = "work";
+    timerState.workCyclesCompleted = 0; // Reset cycle count after large break completes
+    console.log("Large break completed. Cycle count reset. Back to work");
+  }
+  
+  await saveTimerState(timerState);
+  console.log("Timer state saved. Next phase:", timerState.currentPhase, "Cycles completed:", timerState.workCyclesCompleted);
 };
 
 const setIconBadge = (time, textColor, backgroundColor) => {
@@ -211,45 +319,13 @@ const createContextMenu = () => {
   });
 };
 
-const updateTimerState = (currentTimerType, workCyclesCount, maxWorkCycles) => {
-  let nextTimerType = "";
-  if (currentTimerType === "work") {
-    gWorkCyclesCount++;
-    // If the work cycles count is greater than or equal to the max work cycles,
-    // then set the next timer type to large break
-    //  Adding a -1 because the work cycles count is 0 based
-    nextTimerType =
-      workCyclesCount >= maxWorkCycles - 1 ? "largeBreak" : "break";
-  } else if (currentTimerType === "break") {
-    nextTimerType = "work";
-  } else if (currentTimerType === "largeBreak") {
-    gWorkCyclesCount = 0;
-    nextTimerType = "work";
-  }
-  return nextTimerType;
-};
-
-const resetAllGlobals = () => {
-  gIsTimerRunning = false;
-  gWorkCyclesCount = 0;
-  gTimerType = "work";
-  setIconBadge(-1, "#000000", "#FFFFFF");
-};
-
 const updateSettings = async () => {
-  const data = await chrome.storage.local.get("settings");
-  const settings = data.settings;
-  if (settings.timerSettings) {
-    workTime = settings.timerSettings.workTime || workTime;
-    breakTime = settings.timerSettings.breakTime || breakTime;
-    largeBreakTime = settings.timerSettings.largeBreakTime || largeBreakTime;
-    maxCycles = settings.timerSettings.maxCycles || maxCycles;
-  }
+  // Settings are now handled through getTimerSettings() function
+  // This function kept for compatibility with storage change listener
 };
 
 const startTimer = async (time, configId) => {
   const { badgeTextColor, badgeBackgroundColor } = TIMER_CONFIGS[configId];
-  gIsTimerRunning = true;
   setIconBadge(time, badgeTextColor, badgeBackgroundColor);
   setLocalStorage(CURRENT_TIMER_CONFIG, configId);
   setLocalStorage(CURRENT_TIMER_DURATION, time);
@@ -259,12 +335,15 @@ const startTimer = async (time, configId) => {
   });
 };
 
-const stopTimer = () => {
-  if (!gIsTimerRunning) {
+const stopTimer = async () => {
+  const timerState = await getTimerState();
+  if (!timerState.isRunning) {
     showNotification("Timer is not running", "Start the timer to stop it");
     return;
   }
   chrome.alarms.clear(WORK_ALARM_NAME);
-  gIsTimerRunning = false;
+  timerState.isRunning = false;
+  await saveTimerState(timerState);
   setIconBadge(-1, "#000000", "#FFFFFF");
+  showNotification("Timer Stopped", "Timer has been stopped");
 };
