@@ -8,7 +8,7 @@
     <style>
       html {
         --s: 30px; /* the size */
-        --c1: #fb4141;
+        --c1: #FF6B6B; /* Warm red for work completion */
         --c2: #ffffff;
 
         background: conic-gradient(at 60% 60%, var(--c1) 75%, #0000 0) 0 0 /
@@ -27,24 +27,52 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background-color: #f0f0f0;
+        background-color: #fff8f8; /* Light red background */
         font-family: Arial, sans-serif;
         padding: 4rem 10rem;
         border-radius: 4px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3); /* Red glow */
       }
 
       h1 {
-        font-size: 2rem;
-        color: #333;
+        font-size: 2.5rem;
+        color: #C62828; /* Dark red */
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        color: #D32F2F;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        font-size: 1.1rem;
+        color: #FF6B6B;
+        margin-bottom: 2rem;
+        max-width: 400px;
+        line-height: 1.5;
       }
 
       button {
-        background-color: #fb4141;
+        background: linear-gradient(45deg, #FF6B6B, #FF8A80);
         color: white;
-        padding: 10px 20px;
+        padding: 15px 30px;
         border: none;
-        border-radius: 5px;
+        border-radius: 25px;
         cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+      }
+
+      button:hover {
+        background: linear-gradient(45deg, #f44336, #ef5350);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
       }
     </style>
   </head>
