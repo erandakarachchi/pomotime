@@ -8,11 +8,9 @@ window.onload = () => {
     if (timerState && timerState.currentPhase === "largeBreak") {
       heading.textContent = "Time for a longer break! You've completed a full cycle.";
       button.textContent = "Take a long break";
-      console.log("UI updated for large break");
     } else {
       heading.textContent = "You have completed your work session.";
       button.textContent = "Take a break";
-      console.log("UI updated for regular break");
     }
   });
 
@@ -25,9 +23,6 @@ window.onload = () => {
       
       if (timerState && timerState.currentPhase === "largeBreak") {
         action = "startLargeBreakTimer";
-        console.log("Starting large break timer based on current phase");
-      } else {
-        console.log("Starting regular break timer based on current phase");
       }
       
       chrome.runtime.sendMessage({ action: action }, (response) => {
