@@ -26,14 +26,13 @@ window.onload = () => {
       }
       
       chrome.runtime.sendMessage({ action: action }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError);
-          return;
+        if (chrome.runtime.lastError || !response?.ok) {
+          console.error(chrome.runtime.lastError || response?.error);
+          return; // keep the page open so the user can try again
         }
-      });
-      
-      chrome.tabs.getCurrent((tab) => {
-        chrome.tabs.remove(tab.id);
+        chrome.tabs.getCurrent((tab) => {
+          chrome.tabs.remove(tab.id);
+        });
       });
     });
   });
