@@ -4,82 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="large-break.js"></script>
+    <link rel="stylesheet" href="completion.css" />
     <title>Break</title>
-    <style>
-      html {
-        --s: 30px;
-        --c1: #4CAF50;
-        --c2: #ffffff;
-
-        background: conic-gradient(at 60% 60%, var(--c1) 75%, #0000 0) 0 0 /
-            calc(5 * var(--s) / 2) calc(5 * var(--s) / 2),
-          repeating-conic-gradient(var(--c1) 0 25%, #0000 0 50%) 0 0 /
-            calc(5 * var(--s)) calc(5 * var(--s)),
-          repeating-conic-gradient(var(--c2) 0 25%, var(--c1) 0 50%) 0 0 /
-            var(--s) var(--s);
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #f8fff8;
-        font-family: Arial, sans-serif;
-        padding: 4rem 10rem;
-        border-radius: 4px;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
-      }
-
-      h1 {
-        font-size: 2.5rem;
-        color: #2E7D32;
-        margin-bottom: 1rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-      }
-
-      h2 {
-        font-size: 1.5rem;
-        color: #388E3C;
-        margin-bottom: 1rem;
-      }
-
-      p {
-        font-size: 1.1rem;
-        color: #4CAF50;
-        margin-bottom: 2rem;
-        max-width: 400px;
-        line-height: 1.5;
-      }
-
-      button {
-        background: linear-gradient(45deg, #4CAF50, #66BB6A);
-        color: white;
-        padding: 15px 30px;
-        border: none;
-        border-radius: 25px;
-        cursor: pointer;
-        font-size: 1.1rem;
-        font-weight: bold;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-      }
-
-      button:hover {
-        background: linear-gradient(45deg, #45a049, #5cb85c);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
-      }
-    </style>
   </head>
-  <body>
-    <h1>🎉 Congratulations! 🎉</h1>
-    <h2>You've completed a full Pomodoro cycle!</h2>
-    <p>You're refreshed and ready to tackle your next productive cycle. Let's get started!</p>
+  <body class="accent-green">
+    <h1>Congratulations! 🍅</h1>
+    <h2>You've completed a full Pomodoro cycle! You're refreshed and ready to tackle your next productive cycle.</h2>
     <button id="startLongBreak">Start fresh cycle</button>
   </body>
 </html>
