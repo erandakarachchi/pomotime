@@ -84,7 +84,7 @@ const DEFAULT_ICON_PATHS = {
 const PHASE_CONFIGS = {
   [PHASE.work]: {
     badgeBackgroundColor: "#FF6B6B",
-    notification: ["Work complete 🎉", "Take a break and get ready for the next cycle"],
+    notification: ["Work complete", "Take a break and get ready for the next cycle"],
     page: "complete.html",
     duration: (timerSettings) => timerSettings.workTime,
   },
